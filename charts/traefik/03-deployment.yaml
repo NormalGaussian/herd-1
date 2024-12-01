@@ -1,0 +1,56 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: traefik-deployment
+  namespace: traefik
+  labels:
+    app: traefik
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      serviceAccountName: traefik-account
+      containers:
+        - name: traefik
+          image: traefik:v3.2
+          args:
+            - --api.insecure
+            - --accesslog
+            - --accesslog.format=json
+            - --accesslog.fields.headers.defaultmode=keep
+            - --accesslog.fields.names.defaultmode=keep
+            - --accesslog.fields.names.ServiceName=keep
+            - --accesslog.fields.names.RouterName=keep
+            - --log.level=TRACE
+            - --entrypoints.web.Address=:80
+            - --entrypoints.websecure.Address=:443
+            - --entrypoints.traefik.Address=:8080
+            - --providers.kubernetescrd
+            - --providers.kubernetesingress
+            - --entryPoints.web.forwardedHeaders.trustedIPs=127.0.0.1/32,10.1.0.1/32,192.168.2.1/24
+            - --certificatesresolvers.default.acme.tlschallenge=true
+            - --certificatesresolvers.default.acme.email=letsencrypt.traefik@oatmealstuffing.com
+            - --certificatesresolvers.default.acme.storage=acme.json
+            # Delete when this works
+            - --certificatesresolvers.default.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+            #runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: web
+              containerPort: 80
+            - name: traefik
+              containerPort: 8080
+            - name: websecure
+              containerPort: 443
