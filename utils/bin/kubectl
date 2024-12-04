@@ -2,10 +2,13 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-cd "$SCRIPT_DIR"
+SCRIPT_DIR="$( cd "$( dirname "$(readlink -f "${BASH_SOURCE[0]}" )" )" &> /dev/null && pwd )"
 
-SAGGY="$SCRIPT_DIR/saggy"
+SAGGY="$SCRIPT_DIR/saggycli"
 KUBECONFIG_SOPS="$SCRIPT_DIR/../../secrets/kubeconfig.sops"
 
-$SAGGY with "$KUBECONFIG_SOPS" -- kubectl --kubeconfig {} "${ARGS[@]}"
+export SOPS_AGE_KEY_FILE="$SCRIPT_DIR/../../secrets/age.key"
+export PUBLIC_KEYFILE="$SCRIPT_DIR/../../secrets/public-age-keys.json"
+
+echo "Running: $SAGGY with $KUBECONFIG_SOPS -- kubectl --kubeconfig {} $@"
+$SAGGY with "$KUBECONFIG_SOPS" -- kubectl --kubeconfig {} "$@"

@@ -60,31 +60,31 @@ spec:
             capabilities:
               drop:
                 - ALL
-        - name: csi-snapshotter
-          image: registry.k8s.io/sig-storage/csi-snapshotter:v8.0.1
-          args:
-            - "--v=2"
-            - "--csi-address=$(ADDRESS)"
-            - "--leader-election-namespace=kube-system"
-            - "--leader-election"
-            - "--timeout=1200s"
-          env:
-            - name: ADDRESS
-              value: /csi/csi.sock
-          imagePullPolicy: IfNotPresent
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /csi
-          resources:
-            limits:
-              memory: 200Mi
-            requests:
-              cpu: 10m
-              memory: 20Mi
-          securityContext:
-            capabilities:
-              drop:
-                - ALL
+        # - name: csi-snapshotter
+        #   image: registry.k8s.io/sig-storage/csi-snapshotter:v8.0.1
+        #   args:
+        #     - "--v=2"
+        #     - "--csi-address=$(ADDRESS)"
+        #     - "--leader-election-namespace=kube-system"
+        #     - "--leader-election"
+        #     - "--timeout=1200s"
+        #   env:
+        #     - name: ADDRESS
+        #       value: /csi/csi.sock
+        #   imagePullPolicy: IfNotPresent
+        #   volumeMounts:
+        #     - name: socket-dir
+        #       mountPath: /csi
+        #   resources:
+        #     limits:
+        #       memory: 200Mi
+        #     requests:
+        #       cpu: 10m
+        #       memory: 20Mi
+        #   securityContext:
+        #     capabilities:
+        #       drop:
+        #         - ALL
         - name: liveness-probe
           image: registry.k8s.io/sig-storage/livenessprobe:v2.13.1
           args:
@@ -154,3 +154,6 @@ spec:
             type: Directory
         - name: socket-dir
           emptyDir: {}
+          # hostPath:
+          #   path: /var/lib/kubelet/plugins/csi-nfsplugin
+          #   type: DirectoryOrCreate

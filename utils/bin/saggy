@@ -23,10 +23,12 @@ if ! which sops 2>&1 >/dev/null; then
     exit 1
 fi
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+SCRIPT_DIR="$( cd "$( dirname "$(readlink -f "${BASH_SOURCE[0]}" )" )" &> /dev/null && pwd )"
 
-export SOPS_AGE_KEY_FILE="$SCRIPT_DIR/secrets/age.key"
-export PUBLIC_KEYFILE="$SCRIPT_DIR/secrets/public-age-keys.json"
+_SOPS_AGE_KEY_FILE="$SCRIPT_DIR/secrets/age.key"
+_PUBLIC_KEYFILE="$SCRIPT_DIR/secrets/public-age-keys.json"
+export SOPS_AGE_KEY_FILE="${SOPS_AGE_KEY_FILE:-$_SOPS_AGE_KEY_FILE}"
+export PUBLIC_KEYFILE="${PUBLIC_KEYFILE:-$_PUBLIC_KEYFILE}"
 export AGE_PUBLIC_KEYS="$(jq -r '["--age", .[]] | join(" ")' "$PUBLIC_KEYFILE")"
 
 encrypt_file() {
