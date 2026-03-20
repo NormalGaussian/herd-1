@@ -1,0 +1,80 @@
+diff --git a/bundles/index.js b/bundles/index.js
+index aec4df2e81bc2471c613a93b0fa8ba2d25211016..0e90889c43b7f428a123ffbd828a68b643e2a8f7 100644
+--- a/bundles/index.js
++++ b/bundles/index.js
+@@ -225,6 +225,9 @@ var init_main = __esm({
+         if (this._logmode === "json") {
+           logFunction(logObject);
+         } else {
++          function cleanStringify(o) {
++            return JSON.stringify(o, null, 2).split("\n").slice(1, -1).join("\n");
++          }
+           const colour = LogColour[logLevel];
+           if (!colour) {
+             throw new Error(`No such colour for logLevel ${logLevel}`);
+@@ -243,13 +246,22 @@ var init_main = __esm({
+             ostr.push(`[${colour(o.level)} - ${NameColour(name)}]`);
+           }
+           if (o.errorMeta) {
+-            ostr.push(MetaColour(indent(JSON.stringify(o.errorMeta, null, 2), 4)));
++            let errorMeta = cleanStringify(o.errorMeta);
++            if(errorMeta) {
++              ostr.push(MetaColour(indent(errorMeta, 4)));
++            }
+           }
+           if (o.meta) {
+-            ostr.push(MetaColour(indent(JSON.stringify(o.meta, null, 2), 4)));
++            let meta = cleanStringify(o.meta);
++            if(meta) {
++              ostr.push(MetaColour(indent(meta, 4)));
++            }
+           }
+           if (o.tags && Object.keys(o.tags).length) {
+-            ostr.push(TagsColour(indent(JSON.stringify(o.tags, null, 2), 4)));
++            let tags = cleanStringify(o.tags);
++            if(tags) {
++              ostr.push(TagsColour(indent(tags, 4)));
++            }
+           }
+           logFunction(ostr.join("\n"));
+         }
+diff --git a/bundles/node.js b/bundles/node.js
+index 5c27ba1f03493d6b40835da65a84da3f5c5fd23f..aaf9e0e5dd6a28db17b68b750e8021c80f656a02 100644
+--- a/bundles/node.js
++++ b/bundles/node.js
+@@ -1740,6 +1740,9 @@ var _Logger = class {
+     if (this._logmode === "json") {
+       logFunction(logObject);
+     } else {
++      function cleanStringify(o) {
++        return JSON.stringify(o, null, 2).split("\n").slice(1, -1).join("\n");
++      }
+       const colour = LogColour[logLevel];
+       if (!colour) {
+         throw new Error(`No such colour for logLevel ${logLevel}`);
+@@ -1758,13 +1761,22 @@ var _Logger = class {
+         ostr.push(`[${colour(o.level)} - ${NameColour(name)}]`);
+       }
+       if (o.errorMeta) {
+-        ostr.push(MetaColour(indent(JSON.stringify(o.errorMeta, null, 2), 4)));
++        let errorMeta = cleanStringify(o.errorMeta);
++        if(errorMeta) {
++          ostr.push(MetaColour(indent(errorMeta, 4)));
++        }
+       }
+       if (o.meta) {
+-        ostr.push(MetaColour(indent(JSON.stringify(o.meta, null, 2), 4)));
++        let meta = cleanStringify(o.meta);
++        if(meta) {
++          ostr.push(MetaColour(indent(meta, 4)));
++        }
+       }
+       if (o.tags && Object.keys(o.tags).length) {
+-        ostr.push(TagsColour(indent(JSON.stringify(o.tags, null, 2), 4)));
++        let tags = cleanStringify(o.tags);
++        if(tags) {
++          ostr.push(TagsColour(indent(tags, 4)));
++        }
+       }
+       logFunction(ostr.join("\n"));
+     }

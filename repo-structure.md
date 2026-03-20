@@ -11,6 +11,10 @@ Infrastructure-as-code repository for the `herd-1` Kubernetes cluster. Contains 
 ├── apply-dir.sh           # Applies all YAML files in a directory sequentially (2s delay between)
 ├── kubectl                # Symlink → utils/bin/kubectl
 ├── helm                   # Symlink → utils/bin/helm
+├── talosctl               # Symlink → utils/bin/talosctl
+├── talos.yaml             # Cluster definition (node IPs, config patches)
+├── config-patch/          # Talos machine config patches (DHCP, VIP, install disk, etc.)
+├── image-config/          # Talos image customization (extensions, overlays)
 ├── charts/                # Kubernetes manifests, organized by component
 │   ├── argocd/            # ArgoCD GitOps controller (~60 manifest files)
 │   ├── jellyfin/          # Media server (not deployed, needs storage)
@@ -22,7 +26,9 @@ Infrastructure-as-code repository for the `herd-1` Kubernetes cluster. Contains 
 │   └── whoami/            # Demo app (not deployed)
 ├── secrets/               # Encrypted secrets
 │   ├── age.key            # age encryption key
-│   └── kubeconfig.sops    # SOPS-encrypted kubeconfig
+│   ├── kubeconfig.sops    # SOPS-encrypted kubeconfig
+│   ├── talos-secrets.sops.yaml  # Encrypted cluster identity secrets (CA certs, keys)
+│   └── talos.sops/        # Encrypted Talos operational configs (talosconfig, machine configs)
 └── utils/
     ├── bin/               # kubectl, helm binaries + saggycli wrapper
     └── split_def/         # TypeScript tool to split multi-document YAML
@@ -33,7 +39,7 @@ Infrastructure-as-code repository for the `herd-1` Kubernetes cluster. Contains 
 - **Numbered manifests**: Files prefixed with numbers for apply ordering (`01-namespace.yaml`, `02-config.yaml`, `03-deployment.yaml`)
 - **One component per directory**: Each `charts/` subdirectory is a self-contained set of manifests for one component
 - **apply-dir.sh**: Standard way to apply a component — iterates YAML files in order with delays
-- **saggycli wrapper**: `./kubectl` and `./helm` are symlinks that go through saggycli, which decrypts the SOPS kubeconfig and passes it as `--kubeconfig`
+- **saggycli wrapper**: `./kubectl`, `./helm`, and `./talosctl` are symlinks that go through saggycli, which decrypts SOPS-encrypted files/directories and passes them to the underlying tool
 
 ## Secrets Management
 

@@ -1,0 +1,27 @@
+overlay:
+  name: proxmox-guest
+  image: siderolabs/
+
+# Disk image
+#  https://factory.talos.dev/image/2d9d79fe710caccded6d4b221e24a5e8316073f66b3061b6f2c49de07684c812/v1.8.3/nocloud-amd64.raw.xz
+#
+# ISO
+#  https://factory.talos.dev/image/2d9d79fe710caccded6d4b221e24a5e8316073f66b3061b6f2c49de07684c812/v1.8.3/nocloud-amd64.iso
+#
+# Upgrade image
+#  factory.talos.dev/installer/2d9d79fe710caccded6d4b221e24a5e8316073f66b3061b6f2c49de07684c812:v1.8.3
+#
+# Schematic ID
+#  2d9d79fe710caccded6d4b221e24a5e8316073f66b3061b6f2c49de07684c812
+customization:
+  systemExtensions:
+    officialExtensions:
+      # For longhorn support
+      - siderolabs/iscsi-tools
+      - siderolabs/util-linux-tools
+
+      # for AMD CPU
+      - siderolabs/amd-ucode
+
+      # For proxmox guest
+      - siderolabs/qemu-guest-agent

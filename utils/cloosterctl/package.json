@@ -1,0 +1,25 @@
+{
+  "name": "talos",
+  "packageManager": "yarn@4.5.1",
+  "scripts": {
+    "bootstrap": "yarn dlx @yarnpkg/sdks vscode",
+    "cloosterctl": "vite-node ./src/bin/cli.ts",
+    "format": "prettier --write . --cache-location=.prettier-cache"
+  },
+  "dependencies": {
+    "@normed/json-types": "^1.0.8",
+    "@normed/log-flour": "patch:@normed/log-flour@npm%3A1.2.1#~/.yarn/patches/@normed-log-flour-npm-1.2.1-9c92302b90.patch",
+    "@normed/refinements": "^0.9.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.9.0",
+    "@types/yargs": "^17.0.33",
+    "js-yaml": "^4.1.0",
+    "typescript": "5.6.2",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "vite-node": "^2.1.4"
+  },
+  "type": "module"
+}
