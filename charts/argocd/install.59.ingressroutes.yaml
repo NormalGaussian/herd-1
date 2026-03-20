@@ -20,5 +20,28 @@ spec:
         - name: argo-cd-argocd-server
           port: 80
           scheme: h2c
-  #tls:
-  #  certResolver: default
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: argo-cd-secure
+  namespace: argocd
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`argocd.herd-1.herdwick.oatmealstuffing.com`)
+      priority: 10
+      services:
+        - name: argo-cd-argocd-server
+          port: 80
+    - kind: Rule
+      match: Host(`argocd.herd-1.herdwick.oatmealstuffing.com`) && Header(`Content-Type`, `application/grpc`)
+      priority: 11
+      services:
+        - name: argo-cd-argocd-server
+          port: 80
+          scheme: h2c
+  tls:
+    certResolver: default

@@ -20,7 +20,7 @@ metadata:
 
 spec:
   type: LoadBalancer
-  externalTrafficPolicy: Local
+  externalTrafficPolicy: Cluster
   ports:
     - targetPort: web
       port: 80

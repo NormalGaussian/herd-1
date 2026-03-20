@@ -34,11 +34,23 @@ spec:
             - --providers.kubernetescrd
             - --providers.kubernetesingress
             - --entryPoints.web.forwardedHeaders.trustedIPs=127.0.0.1/32,10.1.0.1/32,192.168.2.1/24
-            - --certificatesresolvers.default.acme.tlschallenge=true
+            - --entryPoints.websecure.forwardedHeaders.trustedIPs=127.0.0.1/32,10.1.0.1/32,192.168.2.1/24
+            - --certificatesresolvers.default.acme.dnsChallenge.provider=cloudflare
+            - --certificatesresolvers.default.acme.dnsChallenge.delayBeforeCheck=0
+            #- --certificatesresolvers.default.acme.tlschallenge=true
             - --certificatesresolvers.default.acme.email=letsencrypt.traefik@oatmealstuffing.com
             - --certificatesresolvers.default.acme.storage=acme.json
             # Delete when this works
             - --certificatesresolvers.default.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory
+          env:
+            - name: CF_API_EMAIL
+              value: "Cloudflare.dec.2022@normal-gaussian.com"
+            - name: CF_API_KEY
+              value: "d24f503c31b1d11eeae394bc2bd33ade5fe75"
+            - name: CF_DNS_API_TOKEN
+              value: "NYWdChmllwN1IIiMYYf8eFoRpsIhChEcgzQcpubV"
+            - name: CF_ZONE_API_TOKEN
+              value: "NYWdChmllwN1IIiMYYf8eFoRpsIhChEcgzQcpubV"
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
