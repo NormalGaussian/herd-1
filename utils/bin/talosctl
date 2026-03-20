@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$( cd "$( dirname "$(readlink -f "${BASH_SOURCE[0]}" )" )" &> /dev/null && pwd )"
 
 SAGGY="$SCRIPT_DIR/saggycli"
-TALOS_SOPS="$SCRIPT_DIR/../../secrets/talos.sops"
+TALOS_SOPS="$SCRIPT_DIR/../../secrets/cluster.sops/talos.sops"
 
 export SOPS_AGE_KEY_FILE="$SCRIPT_DIR/../../secrets/age.key"
 export PUBLIC_KEYFILE="$SCRIPT_DIR/../../secrets/public-age-keys.json"

@@ -4,15 +4,18 @@
 
 Two categories of Talos secrets are encrypted with SOPS + age:
 
-- **`secrets/talos-secrets.sops.yaml`** — Cluster identity secrets (CA certs, keys, bootstrap token). Used when generating new machine configs with `talosctl gen config`.
-- **`secrets/talos.sops/`** — Operational configs (talosconfig, controlplane.yaml, worker.yaml). Used day-to-day by `./talosctl` to talk to the cluster.
+All cluster secrets live under `secrets/cluster.sops/`:
 
-Both are encrypted/decrypted via saggycli. The kubeconfig remains separate at `secrets/kubeconfig.sops`.
+- **`secrets/cluster.sops/kubeconfig.sops`** — Kubernetes kubeconfig, used by `./kubectl` and `./helm`.
+- **`secrets/cluster.sops/talos-secrets.sops.yaml`** — Cluster identity secrets (CA certs, keys, bootstrap token). Used when generating new machine configs with `talosctl gen config`.
+- **`secrets/cluster.sops/talos.sops/`** — Operational configs (talosconfig, controlplane.yaml, worker.yaml). Used day-to-day by `./talosctl` to talk to the cluster.
+
+All are encrypted/decrypted via saggycli.
 
 ## ./talosctl wrapper
 
 `./talosctl` is a symlink to `utils/bin/talosctl`, which:
-1. Decrypts `secrets/talos.sops/` to a temp directory
+1. Decrypts `secrets/cluster.sops/talos.sops/` to a temp directory
 2. Runs `talosctl --talosconfig {tempdir}/talosconfig` with your arguments
 3. Cleans up the temp directory
 
@@ -52,7 +55,7 @@ To regenerate from secrets + patches (using cloosterctl or manually):
 
 ```bash
 # Manual approach
-./utils/bin/saggycli with secrets/talos-secrets.sops.yaml -- \
+./utils/bin/saggycli with secrets/cluster.sops/talos-secrets.sops.yaml -- \
   talosctl gen config herd-1 https://10.1.3.1:6443 \
     --with-secrets {} \
     --config-patch @config-patch/dhcp.yaml \
@@ -63,4 +66,4 @@ To regenerate from secrets + patches (using cloosterctl or manually):
     --config-patch-control-plane @config-patch/allow-controlplane-workloads.yaml
 ```
 
-The generated `controlplane.yaml`, `worker.yaml`, and `talosconfig` should then be placed in `secrets/talos/` and encrypted with `./utils/bin/saggycli encrypt secrets/talos`.
+The generated `controlplane.yaml`, `worker.yaml`, and `talosconfig` should then be placed in `secrets/cluster.sops/talos.sops/` (decrypt first with `-w` flag to write back).

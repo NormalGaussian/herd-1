@@ -26,9 +26,13 @@ Infrastructure-as-code repository for the `herd-1` Kubernetes cluster. Contains 
 │   └── whoami/            # Demo app (not deployed)
 ├── secrets/               # Encrypted secrets
 │   ├── age.key            # age encryption key
-│   ├── kubeconfig.sops    # SOPS-encrypted kubeconfig
-│   ├── talos-secrets.sops.yaml  # Encrypted cluster identity secrets (CA certs, keys)
-│   └── talos.sops/        # Encrypted Talos operational configs (talosconfig, machine configs)
+│   └── cluster.sops/      # Encrypted cluster secrets directory
+│       ├── kubeconfig.sops           # SOPS-encrypted kubeconfig
+│       ├── talos-secrets.sops.yaml   # Cluster identity secrets (CA certs, keys)
+│       └── talos.sops/               # Talos operational configs
+│           ├── talosconfig.sops
+│           ├── controlplane.sops.yaml
+│           └── worker.sops.yaml
 └── utils/
     ├── bin/               # kubectl, helm binaries + saggycli wrapper
     └── split_def/         # TypeScript tool to split multi-document YAML

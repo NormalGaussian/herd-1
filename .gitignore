@@ -10,5 +10,6 @@ talosconfig
 !.yarn/cache
 .pnp.*
 
-secrets
+secrets/*
+!secrets/.gitignore
 herd-1/
