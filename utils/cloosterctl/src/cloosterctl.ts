@@ -5,13 +5,8 @@ import { TalosCtl } from "./talosctl";
 import path from "path";
 import fs from "fs";
 
-export async function apply({logger, config: configFileName, insecure }: { logger: Logger; config: string; insecure: boolean }) {
-  logger.info(`Started`);
-
+async function setup({ logger, config: configFileName, basedir }: { logger: Logger; config: string; basedir: string }) {
   const talosctl = TalosCtl({ logger });
-  logger.debug(`Initialised plugins`, {
-    talosctl: Boolean(talosctl),
-  });
 
   logger.debug(`Checking talosctl installation`);
   const talosctlInstalled = await talosctl.verifyInstallation();
@@ -22,65 +17,101 @@ export async function apply({logger, config: configFileName, insecure }: { logge
   }
   logger.debug(`talosctl is installed correctly`);
 
-  /* Main logic */
-
   if (!configFileName) {
-    throw new ErrorWithMeta(`Must specifiy a config file`);
+    throw new ErrorWithMeta(`Must specify a config file`);
   }
 
-  const clusterConfig = await ClusterConfig.fromFile(configFileName, {
-    eagerFilepathExistence: true,
-  });
+  const clusterConfig = await ClusterConfig.fromFile(
+    path.resolve(basedir, configFileName),
+    { eagerFilepathExistence: true, baseDirectory: basedir },
+  );
   logger.debug(`Read configFile`, { configFileName });
 
-  const basedir = process.cwd();
   const clusterdir = path.resolve(basedir, clusterConfig.serialised.name);
   logger.debug(`Using clusterdir`, { clusterdir });
 
-  // The config for this cluster is saved in a directory named after the cluster
   await ensureDirectory(clusterdir, { basedir });
 
-  // ensure secrets
-  // Don't recreate a secrets file if it already exists, as it is not deterministic
-  let secretsFile: string;
-  {
-    const talos = clusterConfig.serialised.talos;
-    secretsFile = path.resolve(
-      clusterdir,
-      talos?.secrets ?? "talos-secrets.yaml",
-    );
-    logger.debug(`Checking if secrets file exists`, { secretsFile });
-    if (!fs.existsSync(secretsFile)) {
-      logger.debug(`Secrets file does not exist; generating`, { secretsFile });
-      await talosctl.gen.secrets(secretsFile, { basedir });
-      logger.debug(`Secrets file created`, { secretsFile });
-    } else {
-      logger.debug(`Secrets file exists`, { secretsFile });
-    }
+  return { talosctl, clusterConfig, basedir, clusterdir };
+}
+
+async function ensureSecrets({ logger, talosctl, clusterConfig, clusterdir, basedir }: {
+  logger: Logger;
+  talosctl: ReturnType<typeof TalosCtl>;
+  clusterConfig: ClusterConfig;
+  clusterdir: string;
+  basedir: string;
+}) {
+  const talos = clusterConfig.serialised.talos;
+  const secretsFile = path.resolve(
+    clusterdir,
+    talos?.secrets ?? "talos-secrets.yaml",
+  );
+  logger.debug(`Checking if secrets file exists`, { secretsFile });
+  if (!fs.existsSync(secretsFile)) {
+    logger.debug(`Secrets file does not exist; generating`, { secretsFile });
+    await talosctl.gen.secrets(secretsFile, { basedir });
+    logger.debug(`Secrets file created`, { secretsFile });
+  } else {
+    logger.debug(`Secrets file exists`, { secretsFile });
+  }
+  return secretsFile;
+}
+
+export async function regenerate({ logger, config: configFileName, basedir, secrets, talosdir }: { logger: Logger; config: string; basedir: string; secrets: string; talosdir: string }) {
+  logger.info(`Started regenerate`);
+
+  const talosctl = TalosCtl({ logger });
+  const talosctlInstalled = await talosctl.verifyInstallation();
+  if (!talosctlInstalled) {
+    throw new ErrorWithMeta(`talosctl is not installed or is incorrectly configured`);
   }
 
-  // Generate config
-  await talosctl.gen.config(clusterConfig, secretsFile, { basedir });
+  if (!configFileName) {
+    throw new ErrorWithMeta(`Must specify a config file`);
+  }
 
-  logger.info(`Config??`);
+  const clusterConfig = await ClusterConfig.fromFile(
+    path.resolve(basedir, configFileName),
+    { eagerFilepathExistence: true, baseDirectory: basedir },
+  );
+  logger.debug(`Read configFile`, { configFileName });
+
+  const secretsFile = path.resolve(basedir, secrets);
+  if (!fs.existsSync(secretsFile)) {
+    throw new ErrorWithMeta(`Secrets file not found`, { secretsFile });
+  }
+  logger.debug(`Using secrets file`, { secretsFile });
+
+  const outputDir = path.resolve(basedir, talosdir);
+  logger.debug(`Output directory`, { outputDir });
+
+  await talosctl.gen.config(clusterConfig, secretsFile, { basedir, outputDir });
+
+  logger.info(`Regenerated configs in ${talosdir}`);
+}
+
+export async function apply({ logger, config: configFileName, insecure, basedir }: { logger: Logger; config: string; insecure: boolean; basedir: string }) {
+  logger.info(`Started apply`);
+
+  const { talosctl, clusterConfig, clusterdir, basedir: resolvedBasedir } = await setup({ logger, config: configFileName, basedir });
+  const secretsFile = await ensureSecrets({ logger, talosctl, clusterConfig, clusterdir, basedir: resolvedBasedir });
+
+  // Generate config
+  await talosctl.gen.config(clusterConfig, secretsFile, { basedir: resolvedBasedir });
+
+  logger.info(`Generated configs`);
 
   // Apply config
-  await talosctl.gen["apply-config"](clusterConfig, { basedir, insecure });
+  await talosctl.gen["apply-config"](clusterConfig, { basedir: resolvedBasedir, insecure });
 
-  // TODO: bootstrap kubernetes
-
-  // TODO: download kubeconfig
-
-  logger.info(`Generated config`);
+  logger.info(`Applied config to all nodes`);
 }
 
 export async function install({ logger }: { logger: Logger }) {
   logger.info(`Started`);
 
   const talosctl = TalosCtl({ logger });
-  logger.debug(`Initialised plugins`, {
-    talosctl: Boolean(talosctl),
-  });
 
   logger.debug(`Checking talosctl installation`);
   const talosctlInstalled = await talosctl.verifyInstallation();

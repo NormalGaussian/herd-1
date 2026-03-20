@@ -66,7 +66,7 @@ export function TalosCtl({ logger }: { logger: Logger }) {
       async config(
         config: ClusterConfig,
         secretsFile: string | undefined,
-        { basedir }: { basedir: string },
+        { basedir, outputDir }: { basedir: string; outputDir?: string },
       ): ReturnType<typeof run> {
         const {
           serialised: { name, talos },
@@ -109,7 +109,7 @@ export function TalosCtl({ logger }: { logger: Logger }) {
               ])
               .flat(),
             "--output",
-            path.resolve(basedir, name, "talos"),
+            outputDir ?? path.resolve(basedir, name, "talos"),
             ...(secretsFile ? ["--with-secrets", secretsFile] : []),
             "--force", // override if they already exist
           ],
