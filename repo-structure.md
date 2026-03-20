@@ -34,7 +34,8 @@ Infrastructure-as-code repository for the `herd-1` Kubernetes cluster. Contains 
 │           ├── controlplane.sops.yaml
 │           └── worker.sops.yaml
 └── utils/
-    ├── bin/               # kubectl, helm binaries + saggycli wrapper
+    ├── bin/               # kubectl, helm, talosctl wrappers + saggycli
+    ├── cloosterctl/       # TypeScript tool for Talos cluster bootstrap/management
     └── split_def/         # TypeScript tool to split multi-document YAML
 ```
 
@@ -47,9 +48,9 @@ Infrastructure-as-code repository for the `herd-1` Kubernetes cluster. Contains 
 
 ## Secrets Management
 
-- **SOPS + age**: Kubeconfig is encrypted at rest with SOPS using age keys
-- The `saggycli` tool handles decryption transparently when running kubectl/helm
-- `.gitignore` excludes raw kubeconfig files
+- **SOPS + age**: Cluster secrets are encrypted at rest with SOPS using age keys in `secrets/cluster.sops/`
+- The `saggycli` tool handles decryption transparently when running kubectl/helm/talosctl
+- `.gitignore` excludes plaintext secrets and generated cluster directories
 
 ## Domain
 
