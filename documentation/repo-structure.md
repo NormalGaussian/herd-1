@@ -13,17 +13,19 @@ Infrastructure-as-code repository for the `herd-1` Kubernetes cluster. Contains 
 ├── helm                   # Symlink → utils/bin/helm
 ├── talosctl               # Symlink → utils/bin/talosctl
 ├── talos.yaml             # Cluster definition (node IPs, config patches)
-├── config-patch/          # Talos machine config patches (DHCP, VIP, install disk, etc.)
-├── image-config/          # Talos image customization (extensions, overlays)
-├── charts/                # Kubernetes manifests, organized by component
-│   ├── argocd/            # ArgoCD GitOps controller (~60 manifest files)
-│   ├── jellyfin/          # Media server (not deployed, needs storage)
-│   ├── kube-proxy/        # kube-proxy configmap (not used — Talos manages kube-proxy directly)
-│   ├── metallb/           # MetalLB load balancer — BGP peer + IP pool config
-│   ├── metricserver/      # Kubernetes metrics server
-│   ├── nfs/               # NFS CSI driver + test StorageClass/PVC (being replaced by LINSTOR)
-│   ├── traefik/           # Traefik ingress controller, services, IngressRoutes
-│   └── whoami/            # Demo app (not deployed)
+├── kubernetes/
+│   └── charts/            # Kubernetes manifests, organized by component
+│       ├── argocd/        # ArgoCD GitOps controller (~60 manifest files)
+│       ├── jellyfin/      # Media server (not deployed, needs storage)
+│       ├── kube-proxy/    # kube-proxy configmap (not used — Talos manages kube-proxy directly)
+│       ├── metallb/       # MetalLB load balancer — BGP peer + IP pool config
+│       ├── metricserver/  # Kubernetes metrics server
+│       ├── nfs/           # NFS CSI driver + test StorageClass/PVC (being replaced by LINSTOR)
+│       ├── traefik/       # Traefik ingress controller, services, IngressRoutes
+│       └── whoami/        # Demo app (not deployed)
+├── talos/
+│   ├── config-patch/      # Talos machine config patches (DHCP, VIP, install disk, etc.)
+│   └── image-config/      # Talos image customization (extensions, overlays)
 ├── secrets/               # Encrypted secrets
 │   ├── age.key            # age encryption key
 │   └── cluster.sops/      # Encrypted cluster secrets directory
@@ -42,7 +44,7 @@ Infrastructure-as-code repository for the `herd-1` Kubernetes cluster. Contains 
 ## Conventions
 
 - **Numbered manifests**: Files prefixed with numbers for apply ordering (`01-namespace.yaml`, `02-config.yaml`, `03-deployment.yaml`)
-- **One component per directory**: Each `charts/` subdirectory is a self-contained set of manifests for one component
+- **One component per directory**: Each `kubernetes/charts/` subdirectory is a self-contained set of manifests for one component
 - **apply-dir.sh**: Standard way to apply a component — iterates YAML files in order with delays
 - **saggycli wrapper**: `./kubectl`, `./helm`, and `./talosctl` are symlinks that go through saggycli, which decrypts SOPS-encrypted files/directories and passes them to the underlying tool
 

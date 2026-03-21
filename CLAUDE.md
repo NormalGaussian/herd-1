@@ -9,14 +9,7 @@ Kubernetes homelab cluster (`herd-1`) running on Talos Linux in Proxmox.
 - `./kubectl <args>` — kubectl via saggycli (auto-decrypts SOPS kubeconfig)
 - `./helm <args>` — helm via saggycli
 - `./talosctl <args>` — talosctl via saggycli (auto-decrypts SOPS talosconfig)
-- `./apply-dir.sh charts/<component>` — wraps kubectl, applies all manifests in a component directory
-
-## saggycli
-
-- `saggycli encrypt <file>` — encrypts file to `<file>.sops` (or `.sops.<suffix>`)
-- `saggycli encrypt <dir>` — encrypts directory to `<dir>.sops/` and everything recursively inside of it
-- `saggycli with <file-or-dir.sops> -- <command>` — decrypt to temp, run command with `{}` as placeholder for temp path, clean up
-- `saggycli with <target> -w -- <command>` — same but encrypts changes back after command completes
+- `./apply-dir.sh kubernetes/charts/<component>` — wraps kubectl, applies all manifests in a component directory
 
 ## Reference Documents
 
@@ -26,3 +19,6 @@ Kubernetes homelab cluster (`herd-1`) running on Talos Linux in Proxmox.
 - `documentation/networking-options.md` — Options for exposing services externally (CF Tunnel + Tailscale)
 - `documentation/storage-situation.md` — Storage: NFS is placeholder, migrating to LINSTOR/DRBD
 - `documentation/talos-cluster.md` — Talos cluster management, secrets, and config
+- `documentation/saggycli.md` — saggycli CLI for SOPS encryption/decryption of secrets
+- `documentation/cloosterctl.md` — cloosterctl tool for Talos cluster bootstrap and management
+- `documentation/split-def.md` — split-def tool for splitting multi-document YAML files

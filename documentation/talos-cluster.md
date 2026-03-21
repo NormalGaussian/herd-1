@@ -27,7 +27,7 @@ All are encrypted/decrypted via saggycli.
 
 `talos.yaml` defines the cluster topology in cloosterctl format: node IPs, config patches to apply, and grouping (control-plane vs worker). Used by cloosterctl when generating or applying machine configs.
 
-## Config Patches — config-patch/
+## Config Patches — talos/config-patch/
 
 Talos machine config patches referenced by `talos.yaml` and applied when generating machine configs:
 
@@ -40,9 +40,9 @@ Talos machine config patches referenced by `talos.yaml` and applied when generat
 | `virtual-ip.yaml` | Shared VIP on eth0 for HA control plane |
 | `allow-controlplane-workloads.yaml` | Allow scheduling on control plane nodes |
 
-## Image Config — image-config/
+## Image Config — talos/image-config/
 
-`image-config/proxmox-guest.yaml` defines the Talos image customization:
+`talos/image-config/proxmox-guest.yaml` defines the Talos image customization:
 - Proxmox guest overlay (qemu-guest-agent)
 - System extensions (iscsi-tools, util-linux-tools, amd-ucode)
 - Used to generate image URLs from the Talos Image Factory
@@ -55,7 +55,7 @@ TypeScript tool in `utils/cloosterctl/` that automates Talos cluster operations.
 cd utils/cloosterctl && yarn cloosterctl <command> [options]
 ```
 
-It uses `process.cwd()` as the base directory but is invoked via `yarn cloosterctl` (which runs from `utils/cloosterctl/`). Since `talos.yaml` and `config-patch/` are now at the repo root, run cloosterctl from the repo root by adjusting the config path or symlinking.
+It uses `process.cwd()` as the base directory but is invoked via `yarn cloosterctl` (which runs from `utils/cloosterctl/`). Since `talos.yaml` is at the repo root and `talos/config-patch/` contains the patches, run cloosterctl from the repo root by adjusting the config path or symlinking.
 
 ### Commands
 
@@ -102,12 +102,12 @@ Decrypt the cluster identity secrets, generate configs, then encrypt the results
 ./utils/bin/saggycli with secrets/cluster.sops/talos-secrets.sops.yaml -- \
   talosctl gen config herd-1 https://10.1.3.1:6443 \
     --with-secrets {} \
-    --config-patch @config-patch/dhcp.yaml \
-    --config-patch @config-patch/install-disk.yaml \
-    --config-patch @config-patch/interface-names.yaml \
-    --config-patch @config-patch/kubelet-certificates.yaml \
-    --config-patch @config-patch/virtual-ip.yaml \
-    --config-patch-control-plane @config-patch/allow-controlplane-workloads.yaml \
+    --config-patch @talos/config-patch/dhcp.yaml \
+    --config-patch @talos/config-patch/install-disk.yaml \
+    --config-patch @talos/config-patch/interface-names.yaml \
+    --config-patch @talos/config-patch/kubelet-certificates.yaml \
+    --config-patch @talos/config-patch/virtual-ip.yaml \
+    --config-patch-control-plane @talos/config-patch/allow-controlplane-workloads.yaml \
     --output herd-1/talos \
     --force
 
@@ -120,7 +120,7 @@ cp herd-1/talos.sops/* secrets/cluster.sops/talos.sops/
 
 Full cluster rebuild from encrypted secrets:
 
-1. Boot Talos nodes from image (see `image-config/proxmox-guest.yaml` for the factory image URL)
+1. Boot Talos nodes from image (see `talos/image-config/proxmox-guest.yaml` for the factory image URL)
 2. Run `cloosterctl apply -c ../../talos.yaml --insecure` from `utils/cloosterctl/` (or adjust paths)
 3. Encrypt the generated configs back into `secrets/cluster.sops/`
 4. Verify with `./talosctl get members` and `./kubectl get nodes`

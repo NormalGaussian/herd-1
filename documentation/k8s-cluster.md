@@ -24,7 +24,7 @@ Two Talos Linux control-plane nodes running as Proxmox VMs. Kubernetes v1.31.2, 
 
 ## Not Deployed
 
-These are defined in `charts/` but not running on the cluster:
+These are defined in `kubernetes/charts/` but not running on the cluster:
 
 - **Jellyfin** - Media server (needs working storage — see storage-situation.md)
 - **whoami** - Test/demo application
@@ -45,5 +45,5 @@ Traefik handles ingress via IngressRoute CRDs. Both HTTP and HTTPS entrypoints a
 - Let's Encrypt still pointed at **staging** CA server — certs are untrusted
 - Cloudflare API credentials hardcoded in Traefik deployment (should be a Secret)
 - NFS StorageClass points to non-existent NFS server (10.1.1.3:/kubernetes) — need to switch to LINSTOR
-- kube-proxy runs nftables mode; the `charts/kube-proxy/configmap.yaml` (IPVS) is not applied/used by Talos
+- kube-proxy runs nftables mode; the `kubernetes/charts/kube-proxy/configmap.yaml` (IPVS) is not applied/used by Talos
 - ICMP (ping) to MetalLB VIPs does not work — this is expected with nftables kube-proxy (only TCP/UDP are proxied)

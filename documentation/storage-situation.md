@@ -39,4 +39,4 @@ To use LINSTOR for Kubernetes PVCs:
 Once LINSTOR storage is working:
 - Remove or update the `nfs-csi` StorageClass
 - The NFS CSI driver pods can remain (harmless) or be removed
-- Update `charts/jellyfin/` to use the new LINSTOR StorageClass
+- Update `kubernetes/charts/jellyfin/` to use the new LINSTOR StorageClass

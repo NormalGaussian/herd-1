@@ -9,11 +9,11 @@ talos:
   nodes:
     all:
       config-patch:
-        - config-patch/dhcp.yaml
-        - config-patch/install-disk.yaml
-        - config-patch/interface-names.yaml
-        - config-patch/kubelet-certificates.yaml
-        - config-patch/virtual-ip.yaml
+        - talos/config-patch/dhcp.yaml
+        - talos/config-patch/install-disk.yaml
+        - talos/config-patch/interface-names.yaml
+        - talos/config-patch/kubelet-certificates.yaml
+        - talos/config-patch/virtual-ip.yaml
     control-plane:
       ips:
         # IPs for the control plane nodes
@@ -24,7 +24,7 @@ talos:
         #- 10.1.3.34
         #- 10.1.3.35
       config-patch:
-        - config-patch/allow-controlplane-workloads.yaml
+        - talos/config-patch/allow-controlplane-workloads.yaml
     worker:
       ips: []
         # IPs for the worker nodes
