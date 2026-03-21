@@ -57,6 +57,42 @@ export function TalosCtl({ logger }: { logger: Logger }) {
         },
       );
     },
+    config: {
+      async endpoints(
+        talosconfig: string,
+        endpoints: string[],
+        { basedir }: { basedir: string },
+      ): ReturnType<typeof run> {
+        return await run(
+          "talosctl",
+          ["config", "endpoints", "--talosconfig", talosconfig, ...endpoints],
+          {
+            stdout: true,
+            stderr: true,
+            spawnOptions: { cwd: basedir },
+            errorOnNonZeroExitCode: true,
+            hooks: basicHooks("set endpoints in talosconfig", logger),
+          },
+        );
+      },
+      async nodes(
+        talosconfig: string,
+        nodes: string[],
+        { basedir }: { basedir: string },
+      ): ReturnType<typeof run> {
+        return await run(
+          "talosctl",
+          ["config", "nodes", "--talosconfig", talosconfig, ...nodes],
+          {
+            stdout: true,
+            stderr: true,
+            spawnOptions: { cwd: basedir },
+            errorOnNonZeroExitCode: true,
+            hooks: basicHooks("set nodes in talosconfig", logger),
+          },
+        );
+      },
+    },
     gen: {
       /**
        * Run `talosctl gen config ...` using the options from a ClusterConfig

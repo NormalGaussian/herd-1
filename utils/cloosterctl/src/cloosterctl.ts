@@ -88,6 +88,15 @@ export async function regenerate({ logger, config: configFileName, basedir, secr
 
   await talosctl.gen.config(clusterConfig, secretsFile, { basedir, outputDir });
 
+  const talosconfig = path.resolve(outputDir, "talosconfig");
+  const controlPlaneIPs = clusterConfig.serialised.talos?.nodes["control-plane"].ips ?? [];
+
+  if (controlPlaneIPs.length) {
+    await talosctl.config.endpoints(talosconfig, controlPlaneIPs, { basedir });
+    await talosctl.config.nodes(talosconfig, controlPlaneIPs, { basedir });
+    logger.info(`Set endpoints and nodes in talosconfig`);
+  }
+
   logger.info(`Regenerated configs in ${talosdir}`);
 }
 
