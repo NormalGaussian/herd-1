@@ -1,0 +1,83 @@
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$( cd "$( dirname "$(readlink -f "${BASH_SOURCE[0]}" )" )" &> /dev/null && pwd )"
+REPO_ROOT="$SCRIPT_DIR/../.."
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+pass() { echo -e "${GREEN}OK${NC} - $1"; }
+fail() { echo -e "${RED}FAIL${NC} - $1"; }
+warn() { echo -e "${YELLOW}WARN${NC} - $1"; }
+
+# Count expected nodes from talos.yaml
+TALOS_YAML="$REPO_ROOT/talos.yaml"
+if [ -f "$TALOS_YAML" ]; then
+  CP_COUNT=$(grep -A 100 'control-plane:' "$TALOS_YAML" | grep -cE '^\s+- 10\.' || true)
+  WORKER_COUNT=$(grep -A 100 'worker:' "$TALOS_YAML" | grep -cE '^\s+- 10\.' || true)
+  EXPECTED_NODES=$((CP_COUNT + WORKER_COUNT))
+else
+  EXPECTED_NODES=""
+fi
+
+# Filter saggycli "Running:" preamble from stdout
+run_kubectl() { "$REPO_ROOT/kubectl" "$@" 2>/dev/null | grep -v '^Running:'; }
+run_talosctl() { "$REPO_ROOT/talosctl" "$@" 2>/dev/null | grep -v '^Running:'; }
+
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT
+
+# Run all checks in parallel
+check_talosctl_reach() {
+  if run_talosctl get members > /dev/null 2>&1; then
+    pass "talosctl can reach the cluster"
+  else
+    fail "talosctl cannot reach the cluster"
+  fi
+}
+
+check_talos_nodes() {
+  if run_talosctl get members --output table > /dev/null 2>&1; then
+    TALOS_NODES=$(run_talosctl get members --output table | tail -n +2 | awk '!seen[$5]++')
+    TALOS_NODE_COUNT=$(echo "$TALOS_NODES" | wc -l)
+    if [ -n "$EXPECTED_NODES" ] && [ "$TALOS_NODE_COUNT" -ne "$EXPECTED_NODES" ]; then
+      warn "talos reports $TALOS_NODE_COUNT node(s), expected $EXPECTED_NODES from talos.yaml"
+    else
+      pass "talos cluster has $TALOS_NODE_COUNT node(s)"
+    fi
+  else
+    fail "cannot list talos nodes"
+  fi
+}
+
+check_kubectl_reach() {
+  if run_kubectl cluster-info > /dev/null 2>&1; then
+    pass "kubectl can reach the API server"
+  else
+    fail "kubectl cannot reach the API server"
+  fi
+}
+
+check_k8s_nodes() {
+  if run_kubectl get nodes --no-headers > /dev/null 2>&1; then
+    NODE_COUNT=$(run_kubectl get nodes --no-headers | wc -l)
+    if [ -n "$EXPECTED_NODES" ] && [ "$NODE_COUNT" -ne "$EXPECTED_NODES" ]; then
+      warn "kubernetes cluster has $NODE_COUNT node(s), expected $EXPECTED_NODES from talos.yaml"
+    else
+      pass "kubernetes cluster has $NODE_COUNT node(s)"
+    fi
+  else
+    fail "cannot list kubernetes nodes"
+  fi
+}
+
+check_talosctl_reach > "$TMPDIR/1" 2>&1 &
+check_talos_nodes    > "$TMPDIR/2" 2>&1 &
+check_kubectl_reach  > "$TMPDIR/3" 2>&1 &
+check_k8s_nodes      > "$TMPDIR/4" 2>&1 &
+wait
+
+cat "$TMPDIR/1" "$TMPDIR/2" "$TMPDIR/3" "$TMPDIR/4"
