@@ -6,10 +6,13 @@ Kubernetes homelab cluster (`herd-1`) running on Talos Linux in Proxmox.
 
 ## Key Commands
 
+Top-level scripts are symlinks into `utils/bin/`.
+
 - `./kubectl <args>` — kubectl via saggycli (auto-decrypts SOPS kubeconfig)
 - `./helm <args>` — helm via saggycli
 - `./talosctl <args>` — talosctl via saggycli (auto-decrypts SOPS talosconfig)
 - `./apply-dir.sh kubernetes/charts/<component>` — wraps kubectl, applies all manifests in a component directory
+- `./connectivity-check` — checks talosctl/kubectl connectivity and validates node counts against `talos.yaml`
 
 ## Reference Documents
 
