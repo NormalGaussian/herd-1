@@ -10,30 +10,29 @@ ORIG_CWD="$(pwd)"
 export SOPS_AGE_KEY_FILE="$SECRETS_DIR/age.key"
 export PUBLIC_KEYFILE="$SECRETS_DIR/public-age-keys.json"
 
-run_cloosterctl() {
-  cd "$CLOOSTERCTL_DIR"
-  yarn cloosterctl --basedir "$ORIG_CWD" "$@"
-}
+COMMAND="${1:-}"
 
-if [[ "${1:-}" == "regenerate" ]]; then
-  shift
+case "$COMMAND" in
+  generate|apply|sync)
+    REGEN_SCRIPT=$(mktemp)
+    trap "rm -f $REGEN_SCRIPT" EXIT
 
-  # Build a temp script that cloosterctl will run inside the decrypted dir
-  REGEN_SCRIPT=$(mktemp)
-  trap "rm -f $REGEN_SCRIPT" EXIT
-
-  cat > "$REGEN_SCRIPT" <<SCRIPT
+    cat > "$REGEN_SCRIPT" <<SCRIPT
 #!/bin/bash
 set -euo pipefail
 cd "$CLOOSTERCTL_DIR"
-exec yarn cloosterctl --basedir "$ORIG_CWD" regenerate \\
-  --secrets "\$1/talos-secrets.yaml" \\
-  --talosdir "\$1/talos.sops" \\
-  $(printf '%q ' "$@")
+exec yarn cloosterctl --basedir "$ORIG_CWD" --secretsdir "\$1" $(printf '%q ' "$@")
 SCRIPT
-  chmod +x "$REGEN_SCRIPT"
+    chmod +x "$REGEN_SCRIPT"
 
-  $SAGGY with "$SECRETS_DIR/cluster.sops" -w -- "$REGEN_SCRIPT" '{}'
-else
-  run_cloosterctl "$@"
-fi
+    if [[ "$COMMAND" == "apply" ]]; then
+      $SAGGY with "$SECRETS_DIR/cluster.sops" -- "$REGEN_SCRIPT" '{}'
+    else
+      $SAGGY with "$SECRETS_DIR/cluster.sops" -w -- "$REGEN_SCRIPT" '{}'
+    fi
+    ;;
+  *)
+    cd "$CLOOSTERCTL_DIR"
+    yarn cloosterctl --basedir "$ORIG_CWD" "$@"
+    ;;
+esac

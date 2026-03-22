@@ -5,50 +5,30 @@ import path from "path";
 export async function readYaml(
   filename: string,
   opts?: jsYaml.LoadOptions,
-): Promise<JSONishObject> {
+): Promise<Record<string, unknown>> {
   const data = await fs.promises.readFile(filename, "utf-8");
-  const yaml = jsYaml.load(
-    data,
-    Object.assign({ filename }, opts),
-  ) as JSONishObject;
+  const yaml = jsYaml.load(data, Object.assign({ filename }, opts)) as Record<
+    string,
+    unknown
+  >;
   return yaml;
 }
 
 export async function writeYaml(
   filename: string,
-  obj: JSONishObject,
+  obj: Record<string, unknown>,
   opts?: jsYaml.DumpOptions,
 ): Promise<void> {
   const data = jsYaml.dump(obj, opts);
   await fs.promises.writeFile(filename, data);
 }
 
-export function JSONish_leaves(
-  path: string[],
-  o: JSONishMember,
-): { path: string[]; leaf: JSONishLeaf }[] {
-  if (typeof o !== "object" || o === null) {
-    return [{ path, leaf: o }];
-  }
-  if (Array.isArray(o)) {
-    return o.flatMap((v, i) => JSONish_leaves([...path, `[${i}]`], v));
-  } else {
-    return Object.entries(o).flatMap(([k, v]) =>
-      JSONish_leaves([...path, k], v),
-    );
-  }
-}
-
-export interface WithMeta {
-  meta: JSONishObject;
-}
-
-export class ErrorWithMeta extends Error implements WithMeta {
-  meta: JSONishObject;
+export class ErrorWithMeta extends Error {
+  meta: Record<string, unknown>;
 
   constructor(
     message: string,
-    meta?: JSONishObject,
+    meta?: Record<string, unknown>,
     errorName: string = "ErrorWithMeta",
   ) {
     super(message);

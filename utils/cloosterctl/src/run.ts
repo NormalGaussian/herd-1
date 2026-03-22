@@ -1,7 +1,8 @@
-import { SpawnOptions, spawn } from "child_process";
-import internal from "stream";
-import { ErrorWithMeta } from "./utils";
-import { Logger } from "@normed/log-flour";
+import type { SpawnOptions } from "child_process";
+import { spawn } from "child_process";
+import type internal from "stream";
+import { ErrorWithMeta } from "./utils.ts";
+import type { Logger } from "@normed/log-flour";
 
 class PromiseLatch {
   private resolve: (() => void) | null = null;
@@ -11,9 +12,9 @@ class PromiseLatch {
   private end(success: true): void;
   private end(success: false, reason: unknown): void;
   private end(success: boolean, reason?: unknown) {
-    const call: null | (() => void) = success
+    const call = success
       ? this.resolve
-      : this.reject?.bind(this.reject, reason);
+      : (this.reject?.bind(this.reject, reason) ?? null);
     this.resolve = null;
     this.reject = null;
     call?.();

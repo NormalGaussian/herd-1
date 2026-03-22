@@ -1,8 +1,8 @@
-import { run } from "./run";
-import type { ClusterConfig } from "./cluster-config";
-import { ErrorWithMeta } from "./utils";
+import { run } from "./run.ts";
+import type { ClusterConfig } from "./cluster-config.ts";
+import { ErrorWithMeta } from "./utils.ts";
 import path from "path";
-import { Logger } from "@normed/log-flour";
+import type { Logger } from "@normed/log-flour";
 
 function basicHooks(commandPurpose: string, logger: Logger) {
   return {
@@ -57,6 +57,42 @@ export function TalosCtl({ logger }: { logger: Logger }) {
         },
       );
     },
+    async bootstrap(
+      talosconfig: string,
+      node: string,
+      { basedir }: { basedir: string },
+    ): ReturnType<typeof run> {
+      return await run(
+        "talosctl",
+        ["bootstrap", "-n", node, "--talosconfig", talosconfig],
+        {
+          stdout: true,
+          stderr: true,
+          spawnOptions: { cwd: basedir },
+          errorOnNonZeroExitCode: true,
+          hooks: basicHooks("bootstrap control plane", logger),
+        },
+      );
+    },
+
+    async kubeconfig(
+      talosconfig: string,
+      outputPath: string,
+      { basedir }: { basedir: string },
+    ): ReturnType<typeof run> {
+      return await run(
+        "talosctl",
+        ["--talosconfig", talosconfig, "kubeconfig", outputPath],
+        {
+          stdout: true,
+          stderr: true,
+          spawnOptions: { cwd: basedir },
+          errorOnNonZeroExitCode: true,
+          hooks: basicHooks("download kubeconfig", logger),
+        },
+      );
+    },
+
     config: {
       async endpoints(
         talosconfig: string,
@@ -186,7 +222,11 @@ export function TalosCtl({ logger }: { logger: Logger }) {
        */
       async "apply-config"(
         clusterConfig: ClusterConfig,
-        { basedir, insecure }: { basedir: string, insecure: boolean },
+        {
+          basedir,
+          insecure,
+          configDir,
+        }: { basedir: string; insecure: boolean; configDir: string },
       ): Promise<void> {
         const {
           serialised: { name, talos },
@@ -211,9 +251,9 @@ export function TalosCtl({ logger }: { logger: Logger }) {
 
         const promises: Promise<void>[] = [];
 
-        const flags = [
-            insecure ? "--insecure" : false
-          ].filter((v): v is string => typeof v === "string");
+        const flags = [insecure ? "--insecure" : false].filter(
+          (v): v is string => typeof v === "string",
+        );
 
         if (controlPlaneIPs.length) {
           const promise = run(
@@ -225,23 +265,21 @@ export function TalosCtl({ logger }: { logger: Logger }) {
               "-e",
               controlPlaneIPs[0],
               "--talosconfig",
-              path.resolve(basedir, name, "talos", "talosconfig"),
+              path.resolve(configDir, "talosconfig"),
               "--file",
-              path.resolve(basedir, name, "talos", "controlplane.yaml"),
+              path.resolve(configDir, "controlplane.yaml"),
             ],
             {
               stdout: true,
               stderr: true,
-              spawnOptions: {
-                cwd: basedir,
-              },
+              spawnOptions: { cwd: basedir },
               errorOnNonZeroExitCode: true,
-              hooks: basicHooks("apply config to control plan nodes", logger),
+              hooks: basicHooks("apply config to control plane nodes", logger),
             },
           ).then(() => {});
           promises.push(promise);
         }
-        
+
         if (workerIPs.length) {
           const promise = run(
             "talosctl",
@@ -250,119 +288,21 @@ export function TalosCtl({ logger }: { logger: Logger }) {
               "apply-config",
               ...flags,
               "--file",
-              path.resolve(basedir, name, "talos", "worker.yaml"),
+              path.resolve(configDir, "worker.yaml"),
             ],
             {
               stdout: true,
               stderr: true,
-              spawnOptions: {
-                cwd: basedir,
-              },
+              spawnOptions: { cwd: basedir },
               errorOnNonZeroExitCode: true,
-              hooks: basicHooks("apply config to worker", logger),
+              hooks: basicHooks("apply config to worker nodes", logger),
             },
           ).then(() => {});
           promises.push(promise);
         }
 
         await Promise.all(promises);
-
         logger.info(`Applied config to all nodes`, { name });
-
-        logger.info(`Sleeping for 60 seconds to allow nodes to come up`);
-
-        await new Promise((resolve) => setTimeout(resolve, 60000));
-
-        logger.info(`Setting endpoints in talosconfig`);
-
-        await run(
-          `talosctl`,
-          [
-            "config",
-            "endpoints",
-            "--talosconfig",
-            path.resolve(basedir, name, "talos", "talosconfig"),
-            controlPlaneIPs[0],
-          ],
-          {
-            stdout: true,
-            stderr: true,
-            spawnOptions: {
-              cwd: basedir,
-            },
-            errorOnNonZeroExitCode: true,
-            hooks: basicHooks("set endpoints in talosconfig", logger),
-          }
-        )
-        await run(
-          `talosctl`,
-          [
-            "config",
-            "nodes",
-            "--talosconfig",
-            path.resolve(basedir, name, "talos", "talosconfig"),
-            ...controlPlaneIPs,
-          ],
-          {
-            stdout: true,
-            stderr: true,
-            spawnOptions: {
-              cwd: basedir,
-            },
-            errorOnNonZeroExitCode: true,
-            hooks: basicHooks("set endpoints in talosconfig", logger),
-          }
-        )
-
-        logger.info(`Bootstrapping control plane`);
-
-        // Bootstrap the primary control plane node
-        await run(
-          "talosctl",
-          [
-            "bootstrap",
-            "-n",
-            controlPlaneIPs[0],
-            "--talosconfig",
-            path.resolve(basedir, name, "talos", "talosconfig"),
-          ],
-          {
-            stdout: true,
-            stderr: true,
-            spawnOptions: {
-              cwd: basedir,
-            },
-            errorOnNonZeroExitCode: true,
-            hooks: basicHooks("bootstrap control plane", logger),
-          },
-        );
-
-        logger.info(`Sleeping for 60 seconds to allow control plane to come up`);
-
-        await new Promise((resolve) => setTimeout(resolve, 60000));
-
-        logger.info(`Downloading kubeconfig`);
-
-        await run(
-          "talosctl",
-          [
-            "--talosconfig",
-            path.resolve(basedir, name, "talos", "talosconfig"),
-            "kubeconfig",
-            path.resolve(basedir, name, "kubeconfig"),
-          ],
-          {
-            stdout: true,
-            stderr: true,
-            spawnOptions: {
-              cwd: basedir,
-            },
-            errorOnNonZeroExitCode: true,
-            hooks: basicHooks("download kubeconfig", logger),
-          },
-        );
-
-        logger.info(`Kubeconfig downloaded. Ready to use with kubectl`);
       },
     },
   };

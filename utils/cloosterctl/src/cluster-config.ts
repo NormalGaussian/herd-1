@@ -1,15 +1,11 @@
-import { RefinementFunctionType } from "@normed/refinements";
-import { ErrorWithMeta, JSONish_leaves, readYaml } from "./utils";
-import { refineSerialisedClusterConfig } from "./refinements/refineSerialisedClusterConfig";
+import { ErrorWithMeta, readYaml } from "./utils.ts";
+import { clusterConfigSchema, type SerialisedClusterConfig } from "./schema.ts";
 import fs from "fs";
 import node_path from "path";
-import "@normed/json-types";
 import path from "path";
 
 export namespace ClusterConfig {
-  export type Serialised = RefinementFunctionType<
-    typeof refineSerialisedClusterConfig
-  >;
+  export type Serialised = SerialisedClusterConfig;
   export type TalosConfig = Serialised["talos"];
   export type ReadOptions = Partial<{
     eagerFilepathExistence: boolean;
@@ -32,85 +28,58 @@ export class ClusterConfig {
     return ClusterConfig.fromJSON(json, readOptions);
   }
 
-  /**
-   * Creates a ClusterConfig from a loosely typed (e.g. JSON/yaml) config.
-   *
-   * readOptions allow setting verifications on the config itself - e.g. checking files
-   *   references exist.
-   *
-   * @param o the JSON/yaml data
-   * @param readOptions
-   * @returns ClusterConfig
-   */
   public static fromJSON(
-    o: JSONishObject,
+    o: unknown,
     readOptions?: ClusterConfig.ReadOptions,
   ): ClusterConfig {
-    const serialised = refineSerialisedClusterConfig([], o);
-    if (serialised instanceof Error) {
-      throw serialised;
+    const result = clusterConfigSchema.safeParse(o);
+    if (!result.success) {
+      throw new ErrorWithMeta(
+        `Invalid cluster config: ${result.error.message}`,
+      );
     }
-    return ClusterConfig.fromSerialised(serialised, readOptions);
+    return ClusterConfig.fromSerialised(result.data, readOptions);
   }
 
-  public toJSON(): JSONishObject {
+  public toJSON() {
     return this.toSerialised();
   }
 
-  /**
-   * Processes a serialised (ie. structurally typed) config into a ClusterConfig
-   *
-   * readOptions allow setting verifications on the config itself - e.g. checking files
-   *   references exist.
-   *
-   * @param serialised
-   * @param readOptions
-   * @returns ClusterConfig
-   */
   public static fromSerialised(
     serialised: ClusterConfig.Serialised,
     readOptions?: ClusterConfig.ReadOptions,
   ): ClusterConfig {
     const config = new ClusterConfig({ serialised });
 
-    if (readOptions) {
-      if (readOptions.eagerFilepathExistence) {
-        // Verify files actually exist
-        const base = readOptions.baseDirectory ?? process.cwd();
+    if (readOptions?.eagerFilepathExistence) {
+      const base = readOptions.baseDirectory ?? process.cwd();
+      const filePaths: string[] = [];
 
-        // talos.secrets
-        // talos.config-patch
-        const leaves = JSONish_leaves([], config.serialised);
-        for (const { leaf, path } of leaves) {
-          const path_asSingleString = path.join(".");
-          if (
-            ![
-              "talos.secrets",
-              "talos.nodes.all.config-patch",
-              "talos.nodes.control-plane.config-patch",
-              "talos.nodes.worker.config-patch",
-            ].some((prefix) => path_asSingleString.startsWith(prefix))
-          ) {
-            continue;
-          }
-          if (path_asSingleString === "talos.secrets" && leaf === undefined) {
-            // Secrets are optional
-            continue;
-          }
-          if (typeof leaf !== "string") {
-            throw new ErrorWithMeta(
-              `Refinement should have ensured that filepath was a string`,
-              { path, leaf },
-              `FilepathError`,
-            );
-          }
-          if (!fs.existsSync(node_path.resolve(base, leaf))) {
-            throw new ErrorWithMeta(
-              `File does not exist`,
-              { path, leaf },
-              `FilepathError`,
-            );
-          }
+      if (serialised.talos?.secrets) {
+        filePaths.push(serialised.talos.secrets);
+      }
+
+      const patches = serialised.talos?.["config-patch"];
+      if (patches) {
+        if (patches.worker) filePaths.push(...patches.worker);
+        if (patches["control-plane"])
+          filePaths.push(...patches["control-plane"]);
+        if (patches.all) filePaths.push(...patches.all);
+      }
+
+      const nodes = serialised.talos?.nodes;
+      if (nodes) {
+        if (nodes.all?.["config-patch"])
+          filePaths.push(...nodes.all["config-patch"]);
+        if (nodes["control-plane"]?.["config-patch"])
+          filePaths.push(...nodes["control-plane"]["config-patch"]);
+        if (nodes.worker?.["config-patch"])
+          filePaths.push(...nodes.worker["config-patch"]);
+      }
+
+      for (const fp of filePaths) {
+        if (!fs.existsSync(node_path.resolve(base, fp))) {
+          throw new ErrorWithMeta(`File does not exist`, { path: fp });
         }
       }
     }

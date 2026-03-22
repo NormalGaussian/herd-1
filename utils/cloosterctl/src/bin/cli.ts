@@ -1,30 +1,40 @@
 import yargs from "yargs";
-import * as cloosterctl from "../cloosterctl";
-import { asError } from "../utils";
+import * as cloosterctl from "../cloosterctl.ts";
+import { asError } from "../utils.ts";
 import { Logger } from "@normed/log-flour";
 
 export function getCli(
   handlers: {
-    apply: (argv: { verbose: boolean; config: string; logger: Logger; insecure: boolean; basedir: string }) => Promise<void>;
-    regenerate: (argv: { verbose: boolean; config: string; logger: Logger; basedir: string; secrets: string; talosdir: string }) => Promise<void>;
-    install: (argv: { verbose: boolean; logger: Logger }) => Promise<void>;
+    generate: (argv: {
+      verbose: boolean;
+      logger: Logger;
+      basedir: string;
+      secretsdir: string;
+    }) => Promise<void>;
+    apply: (argv: {
+      verbose: boolean;
+      logger: Logger;
+      basedir: string;
+      secretsdir: string;
+      insecure: boolean;
+      bootstrap: boolean;
+    }) => Promise<void>;
+    sync: (argv: {
+      verbose: boolean;
+      logger: Logger;
+      basedir: string;
+      secretsdir: string;
+      insecure: boolean;
+      bootstrap: boolean;
+    }) => Promise<void>;
   },
-  logger: Logger
+  logger: Logger,
 ) {
-  const configOption = (yargs: yargs.Argv) => {
-    return yargs.option("config", {
-      alias: "c",
-      type: "string",
-      description: "Path to the cluster configuration file",
-      demandOption: true,
-    });
-  };
-
   return yargs()
     .parserConfiguration({
-        "parse-numbers": false,
-        "strip-aliased": true,
-        "boolean-negation": false,
+      "parse-numbers": false,
+      "strip-aliased": true,
+      "boolean-negation": false,
     })
     .scriptName("cloosterctl")
     .option("verbose", {
@@ -35,18 +45,42 @@ export function getCli(
     })
     .option("basedir", {
       type: "string",
-      description: "Base directory for resolving relative paths (defaults to cwd)",
+      description:
+        "Base directory for resolving relative paths (defaults to cwd)",
       default: process.cwd(),
     })
+    .option("secretsdir", {
+      type: "string",
+      description: "Path to decrypted secrets directory (set by wrapper)",
+      demandOption: true,
+    })
+    .command(
+      "generate",
+      "Regenerate machine configs from talos.yaml and existing secrets",
+      (yargs) => yargs,
+      async (argv) => {
+        const minLogLevel = argv.verbose ? "debug" : "info";
+        logger.setMinLogLevel(minLogLevel);
+        return await handlers.generate({ ...argv, logger });
+      },
+    )
     .command(
       "apply",
-      "Generate and apply a cluster configuration to nodes",
+      "Apply generated configs to cluster nodes",
       (yargs) => {
-        return configOption(yargs).option("insecure", {
-            type: "boolean",
-            description: "Allow insecure connections from talosctl to nodes",
+        return yargs
+          .option("insecure", {
+            type: "boolean" as const,
+            description:
+              "Allow insecure connections to nodes (first-time setup)",
             default: false,
-        });
+          })
+          .option("bootstrap", {
+            type: "boolean" as const,
+            description:
+              "Run full bootstrap sequence (wait, bootstrap etcd, download kubeconfig)",
+            default: false,
+          });
       },
       async (argv) => {
         const minLogLevel = argv.verbose ? "debug" : "info";
@@ -55,38 +89,27 @@ export function getCli(
       },
     )
     .command(
-      "regenerate",
-      "Regenerate machine configs from secrets and patches (does not apply to nodes)",
+      "sync",
+      "Generate configs and apply them to cluster nodes",
       (yargs) => {
-        return configOption(yargs)
-          .option("secrets", {
-            alias: "s",
-            type: "string",
-            description: "Path to the cluster secrets file",
-            demandOption: true,
+        return yargs
+          .option("insecure", {
+            type: "boolean" as const,
+            description:
+              "Allow insecure connections to nodes (first-time setup)",
+            default: false,
           })
-          .option("talosdir", {
-            type: "string",
-            description: "Directory for generated talos configs",
-            demandOption: true,
+          .option("bootstrap", {
+            type: "boolean" as const,
+            description:
+              "Run full bootstrap sequence (wait, bootstrap etcd, download kubeconfig)",
+            default: false,
           });
       },
       async (argv) => {
         const minLogLevel = argv.verbose ? "debug" : "info";
         logger.setMinLogLevel(minLogLevel);
-        return await handlers.regenerate({ ...argv, logger });
-      },
-    )
-    .command(
-      "install",
-      "Install talosctl",
-      (yargs) => {
-        return yargs;
-      },
-      async (argv) => {
-        const minLogLevel = argv.verbose ? "debug" : "info";
-        logger.setMinLogLevel(minLogLevel);
-        return await handlers.install({ ...argv, logger });
+        return await handlers.sync({ ...argv, logger });
       },
     )
     .help()
@@ -97,9 +120,12 @@ export function getCli(
 }
 
 const logger = new Logger("cloosterctl");
-getCli(cloosterctl, logger).parseAsync(process.argv.slice(2)).then(() => {
+getCli(cloosterctl, logger)
+  .parseAsync(process.argv.slice(2))
+  .then(() => {
     process.exit(0);
-}).catch((e) => {
-    logger.error(asError(e))
+  })
+  .catch((e) => {
+    logger.error(asError(e));
     process.exit(1);
-})
+  });
