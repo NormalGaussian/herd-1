@@ -1,4 +1,4 @@
-import type { Logger } from "@normed/log-flour";
+import type { Logger } from "./logger.ts";
 import { ErrorWithMeta } from "./utils.ts";
 import { ClusterConfig } from "./cluster-config.ts";
 import { TalosCtl } from "./talosctl.ts";

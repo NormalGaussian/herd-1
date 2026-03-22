@@ -2,7 +2,7 @@ import type { SpawnOptions } from "child_process";
 import { spawn } from "child_process";
 import type internal from "stream";
 import { ErrorWithMeta } from "./utils.ts";
-import type { Logger } from "@normed/log-flour";
+import type { Logger } from "./logger.ts";
 
 class PromiseLatch {
   private resolve: (() => void) | null = null;

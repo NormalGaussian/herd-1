@@ -2,7 +2,7 @@ import { run } from "./run.ts";
 import type { ClusterConfig } from "./cluster-config.ts";
 import { ErrorWithMeta } from "./utils.ts";
 import path from "path";
-import type { Logger } from "@normed/log-flour";
+import type { Logger } from "./logger.ts";
 
 function basicHooks(commandPurpose: string, logger: Logger) {
   return {

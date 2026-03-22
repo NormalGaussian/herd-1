@@ -7,7 +7,6 @@
     "format": "prettier --write . --cache-location=.prettier-cache"
   },
   "dependencies": {
-    "@normed/log-flour": "patch:@normed/log-flour@npm%3A1.2.1#~/.yarn/patches/@normed-log-flour-npm-1.2.1-9c92302b90.patch",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.5.0",
     "js-yaml": "^4.1.1",
