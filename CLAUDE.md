@@ -23,5 +23,5 @@ Top-level scripts are symlinks into `utils/bin/`.
 - `documentation/storage-situation.md` — Storage: NFS is placeholder, migrating to LINSTOR/DRBD
 - `documentation/talos-cluster.md` — Talos cluster management, secrets, and config
 - `documentation/saggycli.md` — saggycli CLI for SOPS encryption/decryption of secrets
-- `documentation/cloosterctl.md` — cloosterctl tool for Talos cluster bootstrap and management
+- `documentation/cloosterctl.md` — cloosterctl tool for Talos cluster bootstrap and management and connection regeneration
 - `documentation/split-def.md` — split-def tool for splitting multi-document YAML files
