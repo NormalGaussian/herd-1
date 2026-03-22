@@ -1,6 +1,6 @@
-import * as cloosterctl from "../cloosterctl.ts";
-import { asError } from "../utils.ts";
-import { Logger } from "../logger.ts";
+import * as cloosterctl from "#cloosterctl";
+import { asError } from "#utils";
+import { Logger } from "#logger";
 
 const COMMANDS = ["generate", "apply", "sync"] as const;
 type Command = (typeof COMMANDS)[number];

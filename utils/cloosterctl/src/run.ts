@@ -1,8 +1,8 @@
 import type { SpawnOptions } from "child_process";
 import { spawn } from "child_process";
 import type internal from "stream";
-import { ErrorWithMeta } from "./utils.ts";
-import type { Logger } from "./logger.ts";
+import { ErrorWithMeta } from "#utils";
+import type { Logger } from "#logger";
 
 class PromiseLatch {
   private resolve: (() => void) | null = null;

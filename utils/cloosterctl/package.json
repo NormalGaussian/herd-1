@@ -16,5 +16,14 @@
   "devDependencies": {
     "prettier": "^3.8.1"
   },
-  "type": "module"
+  "type": "module",
+  "imports": {
+    "#utils": "./src/utils.ts",
+    "#logger": "./src/logger.ts",
+    "#cluster-config": "./src/cluster-config.ts",
+    "#schema": "./src/schema.ts",
+    "#run": "./src/run.ts",
+    "#talosctl": "./src/talosctl.ts",
+    "#cloosterctl": "./src/cloosterctl.ts"
+  }
 }

@@ -1,5 +1,5 @@
-import { ErrorWithMeta, readYaml } from "./utils.ts";
-import { clusterConfigSchema, type SerialisedClusterConfig } from "./schema.ts";
+import { ErrorWithMeta, readYaml } from "#utils";
+import { clusterConfigSchema, type SerialisedClusterConfig } from "#schema";
 import fs from "fs";
 import node_path from "path";
 import path from "path";

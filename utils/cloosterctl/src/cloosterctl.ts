@@ -1,7 +1,7 @@
-import type { Logger } from "./logger.ts";
-import { ErrorWithMeta } from "./utils.ts";
-import { ClusterConfig } from "./cluster-config.ts";
-import { TalosCtl } from "./talosctl.ts";
+import type { Logger } from "#logger";
+import { ErrorWithMeta } from "#utils";
+import { ClusterConfig } from "#cluster-config";
+import { TalosCtl } from "#talosctl";
 import path from "path";
 import fs from "fs";
 

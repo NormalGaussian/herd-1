@@ -15,7 +15,9 @@ function formatMeta(meta: Record<string, unknown>): string {
   const entries = Object.entries(meta);
   if (!entries.length) return "";
   return entries
-    .map(([k, v]) => `    ${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`)
+    .map(
+      ([k, v]) => `    ${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`,
+    )
     .join("\n");
 }
 
@@ -40,7 +42,11 @@ export class Logger {
     this.log("warn", message, undefined, meta);
   }
 
-  error(messageOrError: string | Error, error?: Error, meta?: Record<string, unknown>) {
+  error(
+    messageOrError: string | Error,
+    error?: Error,
+    meta?: Record<string, unknown>,
+  ) {
     if (messageOrError instanceof Error) {
       this.log("error", messageOrError.message, messageOrError);
     } else {
@@ -48,7 +54,12 @@ export class Logger {
     }
   }
 
-  private log(level: LogLevel, message: string, error?: Error, meta?: Record<string, unknown>) {
+  private log(
+    level: LogLevel,
+    message: string,
+    error?: Error,
+    meta?: Record<string, unknown>,
+  ) {
     if (LEVELS[level] < this.minLevel) return;
 
     const parts: string[] = [

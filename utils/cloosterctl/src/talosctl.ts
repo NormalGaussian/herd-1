@@ -1,8 +1,8 @@
-import { run } from "./run.ts";
-import type { ClusterConfig } from "./cluster-config.ts";
-import { ErrorWithMeta } from "./utils.ts";
+import { run } from "#run";
+import type { ClusterConfig } from "#cluster-config";
+import { ErrorWithMeta } from "#utils";
 import path from "path";
-import type { Logger } from "./logger.ts";
+import type { Logger } from "#logger";
 
 function basicHooks(commandPurpose: string, logger: Logger) {
   return {
