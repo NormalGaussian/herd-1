@@ -6,7 +6,6 @@ import path from "path";
 
 export namespace ClusterConfig {
   export type Serialised = SerialisedClusterConfig;
-  export type TalosConfig = Serialised["talos"];
   export type ReadOptions = Partial<{
     eagerFilepathExistence: boolean;
     baseDirectory: string;
