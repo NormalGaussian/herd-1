@@ -1,131 +1,72 @@
-import yargs from "yargs";
 import * as cloosterctl from "../cloosterctl.ts";
 import { asError } from "../utils.ts";
 import { Logger } from "@normed/log-flour";
 
-export function getCli(
-  handlers: {
-    generate: (argv: {
-      verbose: boolean;
-      logger: Logger;
-      basedir: string;
-      secretsdir: string;
-    }) => Promise<void>;
-    apply: (argv: {
-      verbose: boolean;
-      logger: Logger;
-      basedir: string;
-      secretsdir: string;
-      insecure: boolean;
-      bootstrap: boolean;
-    }) => Promise<void>;
-    sync: (argv: {
-      verbose: boolean;
-      logger: Logger;
-      basedir: string;
-      secretsdir: string;
-      insecure: boolean;
-      bootstrap: boolean;
-    }) => Promise<void>;
-  },
-  logger: Logger,
-) {
-  return yargs()
-    .parserConfiguration({
-      "parse-numbers": false,
-      "strip-aliased": true,
-      "boolean-negation": false,
-    })
-    .scriptName("cloosterctl")
-    .option("verbose", {
-      alias: "v",
-      type: "boolean",
-      description: "Run with verbose logging",
-      default: false,
-    })
-    .option("basedir", {
-      type: "string",
-      description:
-        "Base directory for resolving relative paths (defaults to cwd)",
-      default: process.cwd(),
-    })
-    .option("secretsdir", {
-      type: "string",
-      description: "Path to decrypted secrets directory (set by wrapper)",
-      demandOption: true,
-    })
-    .command(
-      "generate",
-      "Regenerate machine configs from talos.yaml and existing secrets",
-      (yargs) => yargs,
-      async (argv) => {
-        const minLogLevel = argv.verbose ? "debug" : "info";
-        logger.setMinLogLevel(minLogLevel);
-        return await handlers.generate({ ...argv, logger });
-      },
-    )
-    .command(
-      "apply",
-      "Apply generated configs to cluster nodes",
-      (yargs) => {
-        return yargs
-          .option("insecure", {
-            type: "boolean" as const,
-            description:
-              "Allow insecure connections to nodes (first-time setup)",
-            default: false,
-          })
-          .option("bootstrap", {
-            type: "boolean" as const,
-            description:
-              "Run full bootstrap sequence (wait, bootstrap etcd, download kubeconfig)",
-            default: false,
-          });
-      },
-      async (argv) => {
-        const minLogLevel = argv.verbose ? "debug" : "info";
-        logger.setMinLogLevel(minLogLevel);
-        return await handlers.apply({ ...argv, logger });
-      },
-    )
-    .command(
-      "sync",
-      "Generate configs and apply them to cluster nodes",
-      (yargs) => {
-        return yargs
-          .option("insecure", {
-            type: "boolean" as const,
-            description:
-              "Allow insecure connections to nodes (first-time setup)",
-            default: false,
-          })
-          .option("bootstrap", {
-            type: "boolean" as const,
-            description:
-              "Run full bootstrap sequence (wait, bootstrap etcd, download kubeconfig)",
-            default: false,
-          });
-      },
-      async (argv) => {
-        const minLogLevel = argv.verbose ? "debug" : "info";
-        logger.setMinLogLevel(minLogLevel);
-        return await handlers.sync({ ...argv, logger });
-      },
-    )
-    .help()
-    .strict()
-    .exitProcess(false)
-    .showHelpOnFail(false)
-    .fail(() => {});
+const COMMANDS = ["generate", "apply", "sync"] as const;
+type Command = (typeof COMMANDS)[number];
+
+function parseArgs(argv: string[]) {
+  const args = argv.slice(2);
+  const command = args.find((a) => !a.startsWith("-")) as Command | undefined;
+
+  if (!command || !COMMANDS.includes(command)) {
+    console.log(`Usage: cloosterctl <${COMMANDS.join("|")}> [options]
+
+Commands:
+  generate   Regenerate machine configs from talos.yaml and existing secrets
+  apply      Apply generated configs to cluster nodes
+  sync       Generate configs and apply them to cluster nodes
+
+Options:
+  -v, --verbose     Run with verbose logging
+  --basedir <path>  Base directory for resolving paths (default: cwd)
+  --secretsdir <p>  Path to decrypted secrets directory (set by wrapper)
+  --insecure        Allow insecure connections to nodes (apply/sync)
+  --bootstrap       Run full bootstrap sequence (apply/sync)`);
+    process.exit(command ? 1 : 0);
+  }
+
+  const has = (flag: string) => args.includes(flag);
+  const get = (flag: string) => {
+    const i = args.indexOf(flag);
+    return i !== -1 ? args[i + 1] : undefined;
+  };
+
+  const secretsdir = get("--secretsdir");
+  if (!secretsdir) {
+    console.error("Error: --secretsdir is required");
+    process.exit(1);
+  }
+
+  return {
+    command,
+    verbose: has("-v") || has("--verbose"),
+    basedir: get("--basedir") ?? process.cwd(),
+    secretsdir,
+    insecure: has("--insecure"),
+    bootstrap: has("--bootstrap"),
+  };
 }
 
 const logger = new Logger("cloosterctl");
-getCli(cloosterctl, logger)
-  .parseAsync(process.argv.slice(2))
-  .then(() => {
-    process.exit(0);
-  })
-  .catch((e) => {
-    logger.error(asError(e));
-    process.exit(1);
-  });
+
+try {
+  const { command, verbose, basedir, secretsdir, insecure, bootstrap } =
+    parseArgs(process.argv);
+  logger.setMinLogLevel(verbose ? "debug" : "info");
+
+  if (command === "generate") {
+    await cloosterctl.generate({ logger, basedir, secretsdir });
+  } else {
+    await cloosterctl[command]({
+      logger,
+      basedir,
+      secretsdir,
+      insecure,
+      bootstrap,
+    });
+  }
+} catch (e) {
+  logger.error(asError(e));
+  process.exit(1);
+}
